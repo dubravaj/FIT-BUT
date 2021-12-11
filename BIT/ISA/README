@@ -1,0 +1,42 @@
+Program isabot slúži ako automatický bot sledujúci aktivitu na kanáloch IRC servera. Bot sa pripojí na IRC server, ktorý je mu potrebné špecifikovať ako vstupný parameter. Kanály zvoleného IRC servera je tiež potrebné špecifikovať v parametroch. Pripojenie môže byť uskutočnené len na server s IPv4 adresou.
+
+Program poskytuje 2 vlastné funkcie ?today a ?msg, ktoré sú vždy súčasťou obsahu IRC správy. 
+Funkcia ?today slúži na zistenie aktuálneho času, bot správu s časom odošle na IRC kanál po tom, čo obdrží od užívateľa na danom kanáli správu s príkazom ?today.
+Funkcia ?msg slúži na odosielanie správ užívateľovi na IRC kanáli. Príkaz má tvar ?msg nickname:msg. Nickname predstavuje meno užívateľa na kanáli, ktorému je správa určená, a msg je text správy. Ak nejaký užívateľ na IRC kanáli odošle v IRC správe tento príkaz, bot buď správu odošle ihneď späť cieľovému užívateľovi ak sa na danom kanáli nachádza alebo ju odošle až v momente, kedy je užívateľ opäť na kanáli prítomný.
+
+IRC bot umožňuje logovať správy, ktoré obsahujú kľúčové slová zadané ako vstupné parametre programu. Takéto správy sa logujú na zvolený SYSLOG server, ktorého adresu je potrebné špecifikovať v parametroch programu.
+
+Parametre programu:
+
+./isabot HOST[:PORT] CHANNELS [-s SYSLOG\_SERVER] [-l~HIGHLIGHT] [-h|--help]
+  
+HOST[:PORT] doménové meno alebo IP adresa IRC servera s voliteľnou špecifikáciou čísla portu 
+
+CHANNELS názov IRC kanála, prípadne kanálov oddelných čiarkov
+
+[-s SYSLOG\_SERVER] parameter určujúci doménové meno alebo IP adresu SYSLOG serveru 
+
+[-l HIGHLIGHT] voliteľ parameter špecifikujúci zoznam kľúčových slov odddelených čiarkov
+
+[-h|--help] výpis užívateľskej nápovedy
+
+
+Príklad použitia:
+
+./isabot irc.freenode.net:6667 "#test1,#test2" -s 192.168.0.1 -l "test,isa"
+./isabot irc.freenode.net "#nwa1,#test" -l "ip,isa" -s 127.0.0.1
+./isabot irc.freenode.net "#nwa" -l "isa,bot"
+
+
+Zoznam zdrojových súborov:
+
+isabot.cpp
+bot_functions.cpp
+bot_functions.h
+bot_connection.cpp
+bot_connection.h
+manual.pdf
+README
+ 
+
+

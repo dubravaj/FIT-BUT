@@ -1,0 +1,25 @@
+Návod na spustenie programu:
+
+Demo ukážku programu je možné sputiť pomocou skriptu ca_demo.py Podľa zvolených parametrov spustí simulátor BiCAS.
+Parametre skriptu: výstupný adresár, kde sa uloží priebeh automatu a číslo funkcie, ktorá sa použije
+
+Príklad:
+
+python2 ca_demo.py ./demo_results -f 2
+
+Skript spustí simulátor BiCAS s použitím funkcie 2 na preddefinovaných sčítačkách a na 4 počiatočných stavoch. Výsledky uloží do adresára demo_results.
+
+Simulátor BiCAS bol naviac upravený, tak, že prijíma 4 parametre.
+-f číslo funkcie
+-i číslo počiatočného stavu
+-i stav buniek počiatočného stavu
+-d výstupný adresár
+
+Príklad:
+
+python2 BiCAS -f 2 -s 3 -i 10 -d ./demo
+
+Simulátor použije funkciu čislo 2, počiatočný stav 3, stav buniek je 10 a výstupný adresár je demo.
+
+Modul obsahujúci implementáciu funkcí pomocou aproximatívnych sčítačiek a násobičiek má názov ca_lib.py
+Python implementácia sčítačiek a násobičiek je v module approxlib.py a využíva zdieľanú knižnicu _approxlib.so

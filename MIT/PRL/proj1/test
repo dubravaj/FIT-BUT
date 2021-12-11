@@ -1,0 +1,45 @@
+#!/bin/bash
+
+if [ $# -eq 1 ];then
+    pocet_hodnot=$1
+fi;
+
+dd if=/dev/random bs=1 count=$pocet_hodnot of=numbers status=none
+
+power2="1"
+m="0"
+
+while [ $power2 -lt $pocet_hodnot ]; do
+	power2=$(bc <<< "$power2*2")
+	m=$((m+1))
+done
+
+power_m="1"
+
+while [ $power_m -lt $m ]; do
+      power_m=$(bc <<< "$power_m*2")
+done
+	
+leaf_procs=$power_m
+num_procs=$(bc <<< "2*($leaf_procs)-1")
+
+if [ $pocet_hodnot -eq 1 ]; then
+     num_procs=1
+fi;
+
+# preklad cpp
+mpic++ --prefix /usr/local/share/OpenMPI -o bks bks.cpp 
+mpirun --prefix /usr/local/share/OpenMPI -np $num_procs bks
+
+rm -f bks numbers
+
+
+
+
+
+
+
+
+
+
+

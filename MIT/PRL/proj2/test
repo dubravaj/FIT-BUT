@@ -1,0 +1,22 @@
+#!/usr/bin/bash
+
+
+if [ $# -eq 1 ];then
+    tree_nodes=$1
+fi;
+
+size=${#tree_nodes}
+num_procs=$(bc <<< "2*($size)-2")
+
+if [ $size -eq 1 ];then
+    num_procs=1
+fi;
+ 
+mpic++ --prefix /usr/local/share/OpenMPI -o vuv vuv.cpp
+mpirun --prefix /usr/local/share/OpenMPI -np $num_procs vuv $tree_nodes
+
+rm -f vuv
+
+
+
+

@@ -1,0 +1,219 @@
+#!/bin/sh
+
+#Autor: Juraj Ondrej Dubrava (xdubra03)
+#IOS Projekt 1
+#Nazov: dirstat
+#Popis: skript na prehladavanie zadaneho priecinka a vypis reportu o jeho obsahu
+#ak je spusteny s prepinacom -i [REGEX], skript ignoruje priecinky a subory podla reg. vyrazu
+#
+
+
+
+#sets the default value for DIR variable
+DIR=`pwd`
+
+#checking options
+while getopts ":i::" option
+   do
+      case "$option" in
+
+      i) FILE_ERE=$OPTARG  ;;
+      ?) echo "ERROR: Invalid arguments." >&2
+         exit 1 ;;
+       esac
+      done
+
+           OPTIND="`expr $OPTIND - 1`"
+           shift $OPTIND
+        
+
+           if [ "$1" != "" ];then
+              DIR=$1
+
+              if [ -d $DIR ];then
+                 cd $DIR
+               else
+                echo "Cannot change to $DIR" >&2
+                exit 1
+             fi
+       fi
+
+
+
+#checking if regular expression is covering then name of root directory
+if [ "$FILE_ERE" != "" ];then
+        HOME_DIR=`pwd`
+        CHECK_DIR="`echo $HOME_DIR | awk -F/ '{print $NF}'`"
+        root="`echo $HOME_DIR | awk -F/ '{print $NF}' | egrep -E "$FILE_ERE"`"
+
+         if ! [ "$CHECK_DIR" != "$root" ];then
+            echo "ERROR: FILE_ERE covers the name of root dir" >&2
+            exit 2
+        fi
+fi
+  
+
+
+#if FILE_ERE is entered, file paths are filtered and stored in f_paths
+
+   if [ "$FILE_ERE" != "" ];then
+file_paths="`find . -type f 2>/dev/null | cut -c 3-`"
+newline="
+"
+IFS="
+"
+f_paths=""
+
+for file_path in $file_paths
+do
+
+  IFS='/'
+  filtered_path=""
+  for name_part in $file_path
+  do
+    filtered_path="$filtered_path""/""`echo "$name_part" | egrep -v "$FILE_ERE"`" 
+  done
+  filtered_path="`echo "$filtered_path" | cut -c 2-`"
+
+
+  if ! [ "$filtered_path" != "$file_path" ]; then
+             file_path="./$file_path" 
+             f_paths="$f_paths""$file_path""$newline"
+          fi
+ 
+done
+
+
+#if FILE_ERE is entered, directory paths are filtered and stored in d_paths
+
+dir_paths="`find . -type d 2>/dev/null | cut -c 3-`"
+newline="
+"
+IFS="
+"
+d_paths=""
+
+for dir_path in $dir_paths
+do
+ 
+  IFS='/'
+  filtered_path=""
+  for name_part in $dir_path
+  do
+    filtered_path="$filtered_path""/""`echo "$name_part" | egrep -v "$FILE_ERE"`"
+  done
+  filtered_path="`echo "$filtered_path" | cut -c 2-`"
+
+
+  if ! [ "$filtered_path" != "$dir_path" ]; then
+             dir_path="./$dir_path"
+             d_paths="$d_paths""$dir_path""$newline"
+          fi
+
+done
+
+#if there is no FILE_ERE, this is the default value for f_paths and d_paths
+else
+
+   # IFS=":"
+    f_paths="`find . -type f 2>/dev/null`"
+    d_paths="`find . -type d 2>/dev/null`"
+
+fi
+
+
+
+#IFS is set to default value
+IFS=" "
+
+#number of directories of the root directory
+ND="`echo  $d_paths | wc -l | tr -d '[[:space:]]'`"
+
+#depth of root directory
+DD="`echo -n $d_paths | awk -F/ '{print NF}' | sort -u | tail -1`"
+
+    if [ -z "$DD" ]; then
+       DD="1"
+  fi
+
+#number of files in root directory
+NF="`echo -n $f_paths | nl | awk '{print $1}' | sort -n -r | head -1 | tr -d '[[:space:]]'`"
+ if [ "$NF" = "" ];then
+      NF="0"
+  fi
+
+#largest file in the root directory
+LF="`echo -n $f_paths | tr '\n' '\0' | xargs -0 ls -l | awk '{print $5}'| sort -n -r | head -1`"
+
+   if [ -z $LF  ]; then
+      LF="N/A"
+
+   fi
+
+
+#calculating average number of files
+AF="`expr $NF / $ND`" 
+
+
+#calculating file size median
+MS="`echo -n $f_paths | tr '\n' '\0' | xargs -0 ls -l | awk '{print $5}' | sort -n | awk '{arr[NR]=$1}END{ if (NR%2==1) print int(arr[(NR+1)/2]); else print int((arr[NR/2]+arr[NR/2+1])/2) }'`"
+     
+    
+
+#calculating average file size
+AS="`echo -n $f_paths | tr '\n' '\0' | xargs -0 ls -l |  awk '{print s+=$5}' | tail -1`"
+
+     if [ $NF = 0 ]; then
+
+        AVG="N/A"
+        MS="N/A"
+    else
+         
+        AVG="`expr $AS / $NF`"
+    fi
+     
+
+#file extensions are sorted in the list separated with comma
+EXT="`echo  $f_paths | egrep -o "[^\/](\.[[:alnum:]]+$)" | cut -c 3- | sort -u | tr '\n' ',' | sed 's/.$//'`"
+
+
+       echo "Root directory: $DIR"
+       echo "Directories: $ND"
+       echo "Max depth: $DD"
+       echo "Average no. of files: $AF"
+       echo "All files: $NF"
+       echo "  Largest file: $LF"
+       echo "  Average file size: $AVG"
+       echo "  File size median: $MS"
+       echo "File extensions: $EXT"
+
+
+
+#report part for every file extension, report contains number of files with that extension, largest file, average file size and file size median
+#if no extension are found, report isn't displayed
+IFS=","
+for i in $EXT
+     do
+
+          NUM_OF_FILES="`echo $f_paths | egrep -E "*.$i" | wc -l | tr -d '[[:space:]]'`"
+          LARGEST_FILE="`echo  $f_paths | egrep -E "*.$i" | tr '\n' '\0' | xargs -0 ls -l | awk '{print $5}' | sort -n -r | head -1`" 
+
+     
+          FILE_SIZES="`echo   $f_paths | egrep -E "*.$i" | tr '\n' '\0' | xargs -0 ls -l | awk '{ sum+=$5 }END{ print sum}'`"   
+         
+         if [ "$NUM_OF_FILES" != "0" ]; then
+         AVERAGE_SIZE="`expr $FILE_SIZES / $NUM_OF_FILES`"    
+         fi
+         
+         FILE_SIZE_MEDIAN="`echo -n  $f_paths | egrep "*.$i" | tr '\n' '\0' | xargs -0 ls -l  | awk '{print $5}' | sort -n | awk '{arr[NR]=$1}END{ if (NR%2==1) print arr[(NR+1)/2]; else print int((arr[NR/2]+arr[NR/2+1])/2)}'`"
+
+        
+
+   
+      echo "Files .$i: $NUM_OF_FILES"
+      echo "  Largest file .$i: $LARGEST_FILE"     
+      echo "  Average file size .$i: $AVERAGE_SIZE"
+      echo "  File size median .$i: $FILE_SIZE_MEDIAN"    
+  
+     done
+
